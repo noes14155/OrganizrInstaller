@@ -4,8 +4,8 @@
 version=v7.5.2-3
 
 #Org Requirements
-orgreqname=('Unzip' 'NGINX' 'PHP' 'PHP-ZIP' 'PDO:SQLite' 'PHP cURL' 'PHP simpleXML' 'PHP XMLrpc')
-orgreq=('unzip' 'nginx' 'php-fpm' 'php-zip' 'php-sqlite3' 'php-curl' 'php-xml' 'php-xmlrpc')
+orgreqname=('software-properties-common' 'Unzip' 'NGINX' 'PHP' 'PHP-ZIP' 'PDO:SQLite' 'PHP cURL' 'PHP simpleXML' 'PHP XMLrpc' 'php8.0-mcrypt' 'php8.0-cli' 'php8.0-mysql' 'php8.0-gd' 'php8.0-iconv' 'php8.0-xsl' 'php8.0-json' 'php8.0-intl' 'php-pear' 'php-imagick' 'php8.0-dev' 'php8.0-common' 'php8.0-mbstring' 'php8.0-soap')
+orgreq=('software-properties-common' 'unzip' 'nginx' 'php8.0-fpm' 'php8.0-zip' 'php8.0-sqlite3' 'php8.0-curl' 'php8.0-xml' 'php8.0-xmlrpc' 'php8.0-mcrypt' 'php8.0-cli' 'php8.0-mysql' 'php8.0-gd' 'php8.0-iconv' 'php8.0-xsl' 'php8.0-json' 'php8.0-intl' 'php-pear' 'php-imagick' 'php8.0-dev' 'php8.0-common' 'php8.0-mbstring' 'php8.0-soap')
 
 
 #Nginx config variables
@@ -378,7 +378,7 @@ LEcertbot_mod()
 				
 				elif [ "$dns_plugin" == "N" ] || [ "$dns_plugin" == "n" ]
 				then
-					certbot certonly --agree-tos --no-eff-email --email $email_var --server https://acme-v02.api.letsencrypt.org/directory --manual -d *.$DOMAIN -d $DOMAIN
+					certbot certonly --agree-tos --no-eff-email --email $email_var --manual -d *.$DOMAIN -d $DOMAIN --preferred-challenges dns-01
 				fi
 			
 			elif [ "$LEcert_type" == "S" ] || [ "$LEcert_type" == "s" ]
@@ -500,7 +500,7 @@ orgdl_mod()
 		mkdir -p $instvar
 		fi
         git clone -b $dlbranch https://github.com/causefx/Organizr.git $instvar/html/
-                
+                wget https://download.nextcloud.com/server/releases/latest.zip
 		if [ ! -d "$instvar/db" ]; then
 		mkdir $instvar/db
 		fi
