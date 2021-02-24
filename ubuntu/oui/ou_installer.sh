@@ -4,8 +4,8 @@
 version=v7.5.2-3
 
 #Org Requirements
-orgreqname=('software-properties-common' 'Unzip' 'NGINX' 'PHP' 'PHP-ZIP' 'PDO:SQLite' 'PHP cURL' 'PHP simpleXML' 'PHP XMLrpc' 'php8.0-mcrypt' 'php8.0-cli' 'php8.0-mysql' 'php8.0-gd' 'php8.0-iconv' 'php8.0-xsl' 'php8.0-json' 'php8.0-intl' 'php-pear' 'php-imagick' 'php8.0-dev' 'php8.0-common' 'php8.0-mbstring' 'php8.0-soap')
-orgreq=('software-properties-common' 'unzip' 'nginx' 'php8.0-fpm' 'php8.0-zip' 'php8.0-sqlite3' 'php8.0-curl' 'php8.0-xml' 'php8.0-xmlrpc' 'php8.0-mcrypt' 'php8.0-cli' 'php8.0-mysql' 'php8.0-gd' 'php8.0-iconv' 'php8.0-xsl' 'php8.0-json' 'php8.0-intl' 'php-pear' 'php-imagick' 'php8.0-dev' 'php8.0-common' 'php8.0-mbstring' 'php8.0-soap')
+orgreqname=('WGET' 'ZIP' 'Unzip' 'NGINX' 'PHP' 'PHP-ZIP' 'PDO:SQLite' 'PHP cURL' 'PHP simpleXML' 'PHP XMLrpc' 'php8.0-mcrypt' 'php8.0-cli' 'php8.0-mysql' 'php8.0-gd' 'php8.0-iconv' 'php8.0-xsl' 'php8.0-json' 'php8.0-intl' 'php-pear' 'php-imagick' 'php8.0-dev' 'php8.0-common' 'php8.0-mbstring' 'php8.0-soap')
+orgreq=('wget' 'zip' 'unzip' 'nginx' 'php8.0-fpm' 'php8.0-zip' 'php8.0-sqlite3' 'php8.0-curl' 'php8.0-xml' 'php8.0-xmlrpc' 'php8.0-mcrypt' 'php8.0-cli' 'php8.0-mysql' 'php8.0-gd' 'php8.0-iconv' 'php8.0-xsl' 'php8.0-json' 'php8.0-intl' 'php-pear' 'php-imagick' 'php8.0-dev' 'php8.0-common' 'php8.0-mbstring' 'php8.0-soap')
 
 
 #Nginx config variables
@@ -72,6 +72,27 @@ orgreq_mod()
 		    apt-get -y install ${orgreq[$i]}
 		    echo
 		done
+		echo "date.timezone = Asia/Dubai" >> /etc/php/8.0/fpm/php.ini
+		echo "date.timezone = Asia/Dubai" >> /etc/php/8.0/cli/php.ini
+		echo "cgi.fix_pathinfo=0" >> /etc/php/8.0/fpm/php.ini
+		echo "cgi.fix_pathinfo=0" >> /etc/php/8.0/cli/php.ini
+		echo env[HOSTNAME] = $HOSTNAME >> /etc/php/8.0/fpm/pool.d/www.conf
+		echo env[PATH] = /usr/local/bin:/usr/bin:/bin >> /etc/php/8.0/fpm/pool.d/www.conf
+		echo env[TMP] = /tmp >> /etc/php/8.0/fpm/pool.d/www.conf
+		echo env[TMPDIR] = /tmp >> /etc/php/8.0/fpm/pool.d/www.conf
+		echo env[TEMP] = /tmp >> /etc/php/8.0/fpm/pool.d/www.conf
+		sudo systemctl restart php8.0-fpm
+		sudo systemctl enable php8.0-fpm
+		echo "Installing SQL"
+		sudo apt install mysql-server mysql-client -y
+		sudo systemctl start mysql
+		sudo systemctl enable mysql
+		mysql_secure_installation
+		echo "Enter password for mysql"
+		mysql -u root -p
+		mysql --execute="create database nextcloud_db; create user nextclouduser@localhost identified by 'Nextclouduser421@';"
+		mysql --execute="grant all privileges on nextcloud_db.* to nextclouduser@localhost identified by 'Nextclouduser421@';"
+		mysql --execute="flush privileges;"
 		echo
     }
 #Domain validation 
@@ -82,7 +103,7 @@ domainval_mod()
 		do
 			if [ "$options" == "1" ] || [ "$options" == "2" ] || [ "$options" == "4" ]  
 			then
-				echo -e "\e[1;36m> Enter a domain or a folder name for your install:\e[0m" 
+				echo -e "\e[1;36m> Enter a domain or a folder name for organizr:\e[0m" 
 				echo -e "\e[1;36m> E.g domain.com / organizr.local / $(hostname).local / anything.local] \e[0m" 
 			else
 				echo -e "\e[1;36m> Enter your domain name e.g. domain.com:\e[0m" 
@@ -90,12 +111,29 @@ domainval_mod()
 			printf '\e[1;36m- \e[0m'
 			read -r dname
 			DOMAIN=$dname
-	
+			if [ "$options" == "1" ] || [ "$options" == "2" ] || [ "$options" == "4" ]  
+			then
+				echo -e "\e[1;36m> Enter a domain or a folder name for nextcoud:\e[0m" 
+				echo -e "\e[1;36m> E.g domain.com / nextcloud.local / $(hostname).local / anything.local] \e[0m" 
+			else
+				echo -e "\e[1;36m> Enter your domain name e.g. domain.com:\e[0m" 
+			fi	
+			printf '\e[1;36m- \e[0m'
+			read -r dname
+			DOMAIN1=$dname
 			# check the domain is roughly valid!
 			PATTERN="^([[:alnum:]]([[:alnum:]\-]{0,61}[[:alnum:]])?\.)+[[:alpha:]]{2,10}$"
 			if [[ "$DOMAIN" =~ $PATTERN ]]; then
 			DOMAIN=`echo $DOMAIN | tr '[A-Z]' '[a-z]'`
 			echo -e "\e[1;36m> \e[0mCreating vhost file for:" $DOMAIN
+			break
+			else
+			echo "> invalid domain name"
+			echo
+			fi
+			if [[ "$DOMAIN1" =~ $PATTERN ]]; then
+			DOMAIN=`echo $DOMAIN1 | tr '[A-Z]' '[a-z]'`
+			echo -e "\e[1;36m> \e[0mCreating vhost file for:" $DOMAIN1
 			break
 			else
 			echo "> invalid domain name"
@@ -110,6 +148,7 @@ vhostcreate_mod()
 		#domainval_mod
 		# Copy the virtual host template
 		CONFIG=$NGINX_SITES/$DOMAIN.conf
+		CONFIG1=$NGINX_SITES/$DOMAIN1.conf
 		echo -e "\e[1;36m> Nginx vhost template type?:\e[0m"
 		echo
 		echo -e "\e[1;36m[CF] \e[0mCloudFlare"
@@ -125,9 +164,11 @@ vhostcreate_mod()
 
 		# set up web root
 		chmod 755 $CONFIG
+		chmod 755 $CONFIG1
 
 		# create symlink to enable site
 		ln -s $CONFIG $NGINX_SITES_ENABLED/$DOMAIN.conf
+		ln -s $CONFIG1 $NGINX_SITES_ENABLED/$DOMAIN1.conf
 
 		echo -e "\e[1;36m> \e[0mSite Created for $DOMAIN"
 		echo
@@ -203,8 +244,11 @@ LEvhostcreate_mod()
 		
 			mkdir -p $NGINX_APPS 								#Apps folder
 			mkdir -p $NGINX_CONFIG/$DOMAIN
+			mkdir -p $NGINX_CONFIG/$DOMAIN1
 			cp -a $CURRENT_DIR/config/apps/. $NGINX_APPS  		#Apps conf files
 			cp -a $CURRENT_DIR/config/le/. $NGINX_CONFIG/$DOMAIN 	#LE conf file
+			cp -a $CURRENT_DIR/config/le/. $NGINX_CONFIG/$DOMAIN1 	#LE conf file
+
 
 			if [ "$org_v" == "1" ] && [ "$vhost_template" == "LE" ] || [ "$vhost_template" == "le" ]
 			then
@@ -216,7 +260,9 @@ LEvhostcreate_mod()
 					then
 						subd='www'
 						subd_doma="$DOMAIN" 
-						serv_name="$subd.$DOMAIN $DOMAIN"  		
+						subd_doma1="$DOMAIN1" 
+						serv_name="$subd.$DOMAIN $DOMAIN"
+						serv_name1="$subd.$DOMAIN1 $DOMAIN1"
 			
 					elif [ "$LEcert_type" == "S" ] || [ "$LEcert_type" == "s" ]
 					then
@@ -237,24 +283,33 @@ LEvhostcreate_mod()
 				LEcertbot_mod
 				if [ "$LEcert_create" == "Y" ] || [ "$LEcert_create" == "y" ]
 				then
-					cp $CURRENT_DIR/templates/le/orgv2_le.template $CONFIG				
+					cp $CURRENT_DIR/templates/le/orgv2_le.template $CONFIG	
+					cp $CURRENT_DIR/templates/le/nxtcld_le.template $CONFIG1
 					if [ "$LEcert_type" == "W" ] || [ "$LEcert_type" == "w" ]
 					then
 						subd='www'
 						subd_doma="$DOMAIN" 
-						serv_name="$subd.$DOMAIN $DOMAIN"  				
+						subd_doma1="$DOMAIN1" 
+						serv_name="$subd.$DOMAIN $DOMAIN"
+						serv_name1="$subd.$DOMAIN1 $DOMAIN1"
+									
 							
 					elif [ "$LEcert_type" == "S" ] || [ "$LEcert_type" == "s" ]
 					then
 						subd_doma="$DOMAIN"
 						serv_name="$DOMAIN" 
+						subd_doma="$DOMAIN1"
+						serv_name="$DOMAIN1" 
 					fi
 
 				elif [ "$LEcert_create" == "N" ] || [ "$LEcert_create" == "n" ]
 				then
 						cp $CURRENT_DIR/templates/le/orgv2_le_no_ssl.template $CONFIG
 						subd_doma="$DOMAIN"
-						serv_name="$DOMAIN"   				
+						serv_name="$DOMAIN" 
+						cp $CURRENT_DIR/templates/le/nxtcld.template $CONFIG1
+						subd_doma1="$DOMAIN1"
+						serv_name1="$DOMAIN1" 
 				fi		
 			fi
 		fi	
@@ -284,6 +339,7 @@ LEcertbot_mod()
 
 			# create symlink to enable site
 			ln -s $CONFIG $NGINX_SITES_ENABLED/$DOMAIN.conf
+			ln -s $CONFIG $NGINX_SITES_ENABLED/$DOMAIN1.conf
 
 			if [ "$LEcert_create" == "Y" ] || [ "$LEcert_create" == "y" ];
 			then 
@@ -379,6 +435,7 @@ LEcertbot_mod()
 				elif [ "$dns_plugin" == "N" ] || [ "$dns_plugin" == "n" ]
 				then
 					certbot certonly --agree-tos --no-eff-email --email $email_var --manual -d *.$DOMAIN -d $DOMAIN --preferred-challenges dns-01
+					certbot certonly --agree-tos --no-eff-email --email $email_var --manual -d *.$DOMAIN -d $DOMAIN1 --preferred-challenges dns-01
 				fi
 			
 			elif [ "$LEcert_type" == "S" ] || [ "$LEcert_type" == "s" ]
@@ -390,7 +447,9 @@ LEcertbot_mod()
 
 			## Once Cert has been generated, delete the created conf file.
 			rm -r -f $NGINX_SITES/$DOMAIN.conf
+			rm -r -f $NGINX_SITES/$DOMAIN1.conf
 			rm -r -f $NGINX_SITES_ENABLED/$DOMAIN.conf
+			rm -r -f $NGINX_SITES_ENABLED/$DOMAIN1.conf
 		}
 
 LEcertbot-dryrun_mod() 
@@ -404,7 +463,7 @@ LEcertbot-dryrun_mod()
 LEcertbot-wildcard-renew_mod()
 		{
 			domainval_mod	
-			certbot certonly --manual -d *.$DOMAIN -d $DOMAIN --preferred-challenges dns-01 --server https://acme-v02.api.letsencrypt.org/directory
+			certbot certonly --manual -d *.$DOMAIN -d $DOMAIN --preferred-challenges dns-01 
 		}
 
 LEcertbot-wc-cf-dns-renew_mod()
@@ -429,35 +488,8 @@ LEcertbot-wc-cf-dns-renew_mod()
 orgdl_mod()
         {
 		echo
-		echo -e "\e[1;36m> which version of Organizr do you want to install?.\e[0m" 
-		echo -e "\e[1;36m[1] \e[0mOrganizr v1 [Out of Support]"
-		echo -e "\e[1;36m[2] \e[0mOrganizr v2" 
-		echo 
-		printf '\e[1;36m> \e[0m'
-		read -r org_v
-		org_v=${org_v:-2}
-		echo
-		echo -e "\e[1;36m> which branch do you want to install?\e[0m .eg. 1a or 2a"
-		echo
-		if [ $org_v = "1" ]
-		then 
-		echo -e "\e[1;36m[1a] \e[0mMaster"
-		echo -e "\e[1;36m[1b] \e[0mDev"
-		echo -e "\e[1;36m[1c] \e[0mPre-Dev"
-		
-		elif [ $org_v = "2" ]
-		then 
-		echo -e "\e[1;36m[2a] \e[0mMaster"
-		echo -e "\e[1;36m[2b] \e[0mDev"
-		fi
-
-		echo
-		printf '\e[1;36m> Enter branch code: \e[0m'
-		read -r dlvar
-		echo
  		if [ -z "$DOMAIN" ]; then
 		domainval_mod
-		 
 		fi		
 		echo
 		echo -e "\e[1;36m> Where do you want to install Organizr? \e[0m"
@@ -466,56 +498,39 @@ orgdl_mod()
 		printf '\e[1;36m- \e[0m'
 		read instvar
 		instvar=${instvar:-/var/www/$DOMAIN}
-		echo
-		#Org Download and Install
-		if [ $dlvar = "1a" ]
-		then 
-		dlbranch=Master
-
-			
-		elif [ $dlvar = "1b" ]
-		then 
-		dlbranch=Develop
-
-
-		elif [ $dlvar = "1c" ]
-		then 
-		dlbranch=Pre-Dev
-
-
-		elif [ $dlvar = "2a" ]
-		then
-		dlbranch=v2-master
-
-
-		elif [ $dlvar = "2b" ]
-		then
-		dlbranch=v2-develop
-
-		fi
-
-		echo -e "\e[1;36m> Downloading & Installing Organizr "$dlbranch" ...\e[0m"
+		instvar1=${instvar:-/var/www/$DOMAIN1}
+		
+		echo -e "\e[1;36m> Downloading & Installing Organizr v2-master...\e[0m"
 
 		if [ ! -d "$instvar" ]; then
 		mkdir -p $instvar
+		mkdir -p $instvar1
 		fi
-        git clone -b $dlbranch https://github.com/causefx/Organizr.git $instvar/html/
-                wget https://download.nextcloud.com/server/releases/latest.zip
+        git clone -b v2-master https://github.com/causefx/Organizr.git $instvar/html/
+        wget https://download.nextcloud.com/server/releases/latest.zip
+		unzip latest.zip
+		mv nextcloud $instvar1
 		if [ ! -d "$instvar/db" ]; then
 		mkdir $instvar/db
 		fi
 		#Configuring permissions on web folder
 		chmod -R 775 $instvar
+		chmod -R 775 $instvar1
 		chown -R www-data:$SUDO_USER $instvar
+		chown -R www-data:$SUDO_USER $instvar1
         }
 #Nginx vhost config
 vhostconfig_mod()
         {      
 		#Add in your domain name to your site nginx conf files
 		SITE_DIR=`echo $instvar`
+		SITE_DIR1=`echo $instvar1`
 		$SED -i "s/DOMAIN/$DOMAIN/g" $CONFIG
+		$SED -i "s/DOMAIN/$DOMAIN1/g" $CONFIG
 		$SED -i "s!ROOT!$SITE_DIR!g" $CONFIG
+		$SED -i "s!ROOT!$SITE_DIR1!g" $CONFIG
 		$SED -i "s/SERV_NAME/$serv_name/g" $CONFIG
+		$SED -i "s/SERV_NAME/$serv_name1/g" $CONFIG
 		if [ "$vhost_template" == "CF" ] || [ "$vhost_template" == "cf" ]
 		then 
 			$SED -i "s/DOMAIN/$DOMAIN/g" $CONFIG_DOMAIN
@@ -524,10 +539,13 @@ vhostconfig_mod()
 		if [ "$vhost_template" == "LE" ] || [ "$vhost_template" == "le" ]
 		then 
 			$SED -i "s/DOMAIN/$DOMAIN/g" $NGINX_CONFIG/$DOMAIN/http_server.conf
+			$SED -i "s/DOMAIN/$DOMAIN1/g" $NGINX_CONFIG/$DOMAIN1/http_server.conf
 			$SED -i "s/SUBD_DOMA/$subd_doma/g" $NGINX_CONFIG/$DOMAIN/ssl.conf
+			$SED -i "s/SUBD_DOMA/$subd_doma1/g" $NGINX_CONFIG/$DOMAIN1/ssl.conf
 		fi
 		phpv=$(ls -t /etc/php | head -1)
 		$SED -i "s/VER/$phpv/g" $NGINX_CONFIG/$DOMAIN/phpblock.conf
+		$SED -i "s/VER/$phpv/g" $NGINX_CONFIG/$DOMAIN1/phpblock.conf
 
 		#Delete default.conf nginx site
 		mkdir -p $tmp/bk/nginx_default_site
@@ -545,6 +563,7 @@ vhostconfig_mod()
 addsite_to_hosts_mod()
        {
 		sudo echo "127.0.0.1 $DOMAIN"  >> /etc/hosts
+		sudo echo "127.0.0.1 $DOMAIN1"  >> /etc/hosts
 	   }
 
 uninstall_oui_mod()
@@ -590,7 +609,7 @@ orginstinfo_mod()
 		echo
 		printf '######################################################'
 		echo
-		echo -e "     	 \e[1;32mOrganizr $q Install Complete  \e[0m"
+		echo -e "     	 \e[1;32mOrganizr $q & Nextcoud Install Complete  \e[0m"
 		printf '######################################################'
 		echo
 		echo
@@ -600,6 +619,10 @@ orginstinfo_mod()
 		echo -e "\e[1;34mInstall directory\e[0m     = $instvar"
 		echo -e "\e[1;34mOrganzir files stored\e[0m = $instvar/html "
 		echo -e "\e[1;34mOrganzir db directory\e[0m = $instvar/db "
+		echo -------------------------------------------------------
+		echo -e " 	   \e[1;36mAbout your Nextcloud install    	\e[0m"
+		echo -------------------------------------------------------
+		echo -e "\e[1;34mInstall directory\e[0m     = $instvar1"
 		if [ "$options" != "2" ] 
 		then
 		echo -e "      \e[1;34mDomain added to\e[0m = /etc/hosts "
